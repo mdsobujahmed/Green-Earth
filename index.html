@@ -8,7 +8,7 @@
 </head>
 <body class="bg-green-50 text-gray-800">
 
-  <!-- ✅ Navbar -->
+  <!--  Navbar -->
   <nav class="bg-green-900 text-white px-6 py-4 flex justify-between items-center">
     <div class="text-lg font-bold">Green Earth</div>
     <ul class="flex space-x-4">
@@ -177,31 +177,88 @@
   <footer class="bg-green-900 text-white text-center py-4">
     © 2025 Green Earth. All Rights Reserved.
   </footer>
-
   <script>
-    let cart = [];
-    const cartList = document.getElementById("cart-list");
-    const cartTotal = document.getElementById("cart-total");
+    const categoryContainer = document.getElementById('categories');
+    const treeContainer = document.getElementById('trees');
+    const cartList = document.getElementById('cart-list');
+    const cartTotal = document.getElementById('cart-total');
+    let total = 0;
 
-    function addToCart(name, price) {
-      cart.push({ name, price });
-      renderCart();
-    }
-
-    function renderCart() {
-      cartList.innerHTML = '';
-      let total = 0;
-      cart.forEach(item => {
-        total += item.price;
-        const li = document.createElement("li");
-        li.className = "flex justify-between items-center text-sm border-b py-1";
-        li.innerHTML = `
-          ${item.name} - ৳${item.price}
-        `;
-        cartList.appendChild(li);
+    // Load all categories
+    fetch('https://openapi.programming-hero.com/api/categories')
+      .then(res => res.json())
+      .then(data => {
+        data.data.forEach(category => {
+          const li = document.createElement('li');
+          li.textContent = category.category;
+          li.className = "cursor-pointer hover:underline text-green-700";
+          li.onclick = () => loadTreesByCategory(category.category_id);
+          categoryContainer.appendChild(li);
+        });
       });
-      cartTotal.innerText = total;
+
+    // Load all plants
+    function loadAllTrees() {
+      fetch('https://openapi.programming-hero.com/api/plants')
+        .then(res => res.json())
+        .then(data => {
+          treeContainer.innerHTML = '';
+          data.data.forEach(tree => {
+            createTreeCard(tree);
+          });
+        });
     }
+
+    // Load trees by category
+    function loadTreesByCategory(id) {
+      treeContainer.innerHTML = '<p class="col-span-2 text-center">Loading...</p>';
+      fetch(`https://openapi.programming-hero.com/api/category/${id}`)
+        .then(res => res.json())
+        .then(data => {
+          treeContainer.innerHTML = '';
+          data.data.forEach(tree => {
+            createTreeCard(tree);
+          });
+        });
+    }
+
+    // Create Card
+    function createTreeCard(tree) {
+      const card = document.createElement('div');
+      card.className = "bg-white p-4 rounded shadow";
+      card.innerHTML = `
+        <img src="${tree.image}" class="w-full h-40 object-cover rounded mb-2" />
+        <h4 class="font-bold text-lg text-green-700 hover:underline cursor-pointer">${tree.name}</h4>
+        <p>${tree.description.slice(0, 60)}...</p>
+        <p class="text-sm text-gray-500">Category: ${tree.category}</p>
+        <p class="font-semibold">$${tree.price}</p>
+        <button onclick="addToCart('${tree.name}', ${tree.price})" class="mt-2 bg-green-600 text-white px-3 py-1 rounded">Add to Cart</button>
+      `;
+      treeContainer.appendChild(card);
+    }
+
+    // Add to cart
+    function addToCart(name, price) {
+      const li = document.createElement('li');
+      li.className = "flex justify-between items-center bg-white p-2 rounded shadow";
+      li.innerHTML = `
+        <span>${name}</span>
+        <button onclick="removeItem(this, ${price})" class="text-red-500 font-bold">❌</button>
+      `;
+      cartList.appendChild(li);
+      total += price;
+      cartTotal.textContent = total.toFixed(2);
+    }
+
+    // Remove from cart
+    function removeItem(btn, price) {
+      btn.parentElement.remove();
+      total -= price;
+      cartTotal.textContent = total.toFixed(2);
+    }
+
+    // Initial Load
+    loadAllTrees();
   </script>
 
 </body>
